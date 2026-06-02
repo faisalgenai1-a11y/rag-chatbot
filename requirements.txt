@@ -4,6 +4,3 @@ langchain-community
 langchain-groq
 pypdf
 faiss-cpu
-sentence-transformers
-torch
-torchvision
