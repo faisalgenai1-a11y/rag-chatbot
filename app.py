@@ -4,9 +4,10 @@ import tempfile
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import FakeEmbeddings
 
+# Title
 st.title("HR Policy RAG Chatbot")
 
 # API key from Streamlit secrets
@@ -19,7 +20,10 @@ llm = ChatGroq(
 )
 
 # Upload PDF
-uploaded_file = st.file_uploader("Upload HR Policy PDF", type="pdf")
+uploaded_file = st.file_uploader(
+    "Upload HR Policy PDF",
+    type="pdf"
+)
 
 if uploaded_file is not None:
 
@@ -42,21 +46,26 @@ if uploaded_file is not None:
 
     docs = text_splitter.split_documents(documents)
 
-    # Create embeddings
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    # Lightweight embeddings
+    embeddings = FakeEmbeddings(size=384)
 
     # Store in FAISS vector database
-    vectorstore = FAISS.from_documents(docs, embeddings)
+    vectorstore = FAISS.from_documents(
+        docs,
+        embeddings
+    )
 
     # User question input
-    user_question = st.text_input("Ask your question")
+    user_question = st.text_input(
+        "Ask your question"
+    )
 
     if user_question:
 
         # Similarity search
-        relevant_docs = vectorstore.similarity_search(user_question)
+        relevant_docs = vectorstore.similarity_search(
+            user_question
+        )
 
         # Combine retrieved text
         context = "\n".join(
@@ -65,14 +74,14 @@ if uploaded_file is not None:
 
         # Final prompt
         final_prompt = f"""
-        Answer the question using the context below.
+Answer the question using the context below.
 
-        Context:
-        {context}
+Context:
+{context}
 
-        Question:
-        {user_question}
-        """
+Question:
+{user_question}
+"""
 
         # LLM response
         response = llm.invoke(final_prompt)
