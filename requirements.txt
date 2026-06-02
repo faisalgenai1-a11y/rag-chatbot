@@ -1,7 +1,4 @@
 streamlit
 langchain
 langchain-community
-pypdf
-python-dotenv
-groq
-sentence-transformers
+langchain-groq
