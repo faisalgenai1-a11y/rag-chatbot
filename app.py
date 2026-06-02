@@ -3,14 +3,14 @@ import tempfile
 
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 
-# Title
-st.title("Simple RAG Chatbot")
+# Streamlit title
+st.title("HR Policy RAG Chatbot")
 
-# API Key
+# Load Groq API Key
 groq_api_key = st.secrets["GROQ_API_KEY"]
 
 # Load LLM
@@ -28,7 +28,11 @@ uploaded_file = st.file_uploader(
 if uploaded_file is not None:
 
     # Save uploaded PDF temporarily
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+    with tempfile.NamedTemporaryFile(
+        delete=False,
+        suffix=".pdf"
+    ) as tmp_file:
+
         tmp_file.write(uploaded_file.read())
         pdf_path = tmp_file.name
 
@@ -36,57 +40,74 @@ if uploaded_file is not None:
 
     # Load PDF
     loader = PyPDFLoader(pdf_path)
-    docs = loader.load()
 
-    st.write("PDF Pages Loaded:", len(docs))
+    documents = loader.load()
 
-    # Split text into chunks
+    st.write("Total Pages:", len(documents))
+
+    # Text Splitter (same as notebook)
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
+        chunk_size=500,
+        chunk_overlap=100,
+        separators=["\n\n", "\n", ". ", "? ", "! ", " "]
     )
 
-    split_docs = text_splitter.split_documents(docs)
+    chunks = text_splitter.split_documents(documents)
 
-    # Create embeddings
+    st.write("Total Chunks:", len(chunks))
+
+    # Embeddings
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
-    # Create vector database
+    # FAISS Vector Store
     vectorstore = FAISS.from_documents(
-        split_docs,
+        chunks,
         embeddings
     )
 
-    # User question
-    question = st.text_input("Ask Question")
+    # Retriever
+    retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 6}
+    )
 
-    if question:
+    # User Question
+    user_question = st.text_input(
+        "Ask your question"
+    )
 
-        # Similarity Search
-        relevant_docs = vectorstore.similarity_search(
-            question,
-            k=5
-        )
+    if user_question:
 
-        # Combine retrieved chunks
-        context = "\n".join(
+        # Retrieve relevant chunks
+        relevant_docs = retriever.invoke(user_question)
+
+        # Combine context
+        context = "\n\n".join(
             [doc.page_content for doc in relevant_docs]
         )
 
         # Final Prompt
-        prompt = f"""
-Answer the question using the PDF content below.
+        final_prompt = f"""
+You are a helpful AI assistant.
+
+Answer ONLY from the provided PDF context.
+
+If answer is not available in context,
+say:
+"I could not find this information in the PDF."
 
 Context:
 {context}
 
 Question:
-{question}
+{user_question}
 """
 
-        # LLM Response
-        response = llm.invoke(prompt)
+        # Generate response
+        response = llm.invoke(final_prompt)
 
+        # Show answer
+        st.write("### Answer")
         st.write(response.content)
