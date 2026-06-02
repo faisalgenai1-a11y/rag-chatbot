@@ -3,20 +3,20 @@ import tempfile
 
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
 
-# Streamlit title
-st.title("HR Policy RAG Chatbot")
+# Title
+st.title("Simple RAG Chatbot")
 
-# Load Groq API Key
+# Groq API Key
 groq_api_key = st.secrets["GROQ_API_KEY"]
 
 # Load LLM
 llm = ChatGroq(
     groq_api_key=groq_api_key,
-    model_name="llama-3.1-8b-instant"
+    model_name="llama3-8b-8192"
 )
 
 # Upload PDF
@@ -27,12 +27,8 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    # Save uploaded PDF temporarily
-    with tempfile.NamedTemporaryFile(
-        delete=False,
-        suffix=".pdf"
-    ) as tmp_file:
-
+    # Save temp PDF
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
         tmp_file.write(uploaded_file.read())
         pdf_path = tmp_file.name
 
@@ -40,74 +36,61 @@ if uploaded_file is not None:
 
     # Load PDF
     loader = PyPDFLoader(pdf_path)
-
     documents = loader.load()
 
     st.write("Total Pages:", len(documents))
 
-    # Text Splitter (same as notebook)
+    # Split text into chunks
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=100,
-        separators=["\n\n", "\n", ". ", "? ", "! ", " "]
+        chunk_size=1000,
+        chunk_overlap=200
     )
 
-    chunks = text_splitter.split_documents(documents)
+    docs = text_splitter.split_documents(documents)
 
-    st.write("Total Chunks:", len(chunks))
+    st.write("Total Chunks:", len(docs))
 
     # Embeddings
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
-    # FAISS Vector Store
+    # Create vector DB
     vectorstore = FAISS.from_documents(
-        chunks,
+        docs,
         embeddings
     )
 
-    # Retriever
-    retriever = vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 6}
-    )
+    # Question input
+    question = st.text_input("Ask Question")
 
-    # User Question
-    user_question = st.text_input(
-        "Ask your question"
-    )
+    if question:
 
-    if user_question:
-
-        # Retrieve relevant chunks
-        relevant_docs = retriever.invoke(user_question)
+        # Similarity search
+        relevant_docs = vectorstore.similarity_search(
+            question,
+            k=4
+        )
 
         # Combine context
         context = "\n\n".join(
             [doc.page_content for doc in relevant_docs]
         )
 
-        # Final Prompt
-        final_prompt = f"""
-You are a helpful AI assistant.
-
-Answer ONLY from the provided PDF context.
-
-If answer is not available in context,
-say:
-"I could not find this information in the PDF."
+        # Prompt
+        prompt = f"""
+Answer the question using ONLY the provided context.
 
 Context:
 {context}
 
 Question:
-{user_question}
+{question}
+
+Answer:
 """
 
-        # Generate response
-        response = llm.invoke(final_prompt)
+        # LLM Response
+        response = llm.invoke(prompt)
 
-        # Show answer
-        st.write("### Answer")
         st.write(response.content)
