@@ -7,7 +7,7 @@ groq_api_key = st.secrets["GROQ_API_KEY"]
 
 llm = ChatGroq(
     groq_api_key=groq_api_key,
-    model_name="llama3-8b-8192"
+    model_name="llama-3.1-8b-instant"
 )
 
 user_question = st.text_input("Ask your question")
