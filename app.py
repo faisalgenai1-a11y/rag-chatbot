@@ -16,7 +16,7 @@ groq_api_key = st.secrets["GROQ_API_KEY"]
 # Load LLM
 llm = ChatGroq(
     groq_api_key=groq_api_key,
-    model_name="llama3-8b-8192"
+    model_name="llama-3.1-8b-instant"
 )
 
 # Upload PDF
@@ -69,7 +69,7 @@ if uploaded_file is not None:
         # Similarity search
         relevant_docs = vectorstore.similarity_search(
             question,
-            k=4
+            k=2
         )
 
         # Combine context
@@ -91,6 +91,11 @@ Answer:
 """
 
         # LLM Response
-        response = llm.invoke(prompt)
+        try:
+            response = llm.invoke(prompt)
+            st.write(response.content)
+
+        except Exception as e:
+            st.error(str(e))
 
         st.write(response.content)
