@@ -97,5 +97,3 @@ Answer:
 
         except Exception as e:
             st.error(str(e))
-
-        st.write(response.content)
