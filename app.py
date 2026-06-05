@@ -69,9 +69,12 @@ if uploaded_file is not None:
         # Similarity search
         relevant_docs = vectorstore.similarity_search(
             question,
-            k=2
+            k=4
         )
-
+        st.write("Retrived Chunks:")
+        for doc in relevent_docs
+            st.write(doc.page_content[:500])
+            
         # Combine context
         context = "\n\n".join(
             [doc.page_content for doc in relevant_docs]
