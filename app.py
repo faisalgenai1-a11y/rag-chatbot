@@ -72,7 +72,7 @@ if uploaded_file is not None:
             k=4
         )
         st.write("Retrived Chunks:")
-        for doc in relevent_docs
+        for doc in relevent_docs:
             st.write(doc.page_content[:500])
             
         # Combine context
