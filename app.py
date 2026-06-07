@@ -62,7 +62,7 @@ if uploaded_file is not None:
     )
 
     # Question input
-    question = st.chat_input("Ask a Question about your pdf")
+    question = st.text_input("Ask a Question about your pdf")
 
     if question:
 
