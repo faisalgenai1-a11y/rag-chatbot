@@ -9,6 +9,8 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 
 # Title
 st.title("Simple RAG Chatbot")
+
+# Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -29,7 +31,7 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    # Save temp PDF
+    # Save PDF temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
         tmp_file.write(uploaded_file.read())
         pdf_path = tmp_file.name
@@ -42,7 +44,7 @@ if uploaded_file is not None:
 
     st.write("Total Pages:", len(documents))
 
-    # Split text into chunks
+    # Split into chunks
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
         chunk_overlap=200
@@ -57,31 +59,37 @@ if uploaded_file is not None:
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
-# Create vector DB
-vectorstore = FAISS.from_documents(
-    docs,
-    embeddings
-)
+    # Create Vector Store
+    vectorstore = FAISS.from_documents(
+        docs,
+        embeddings
+    )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    # Show old messages
+    for msg in st.session_state.messages:
+        st.write(f"**{msg['role']}**: {msg['content']}")
 
-for msg in st.session_state.messages:
-    st.write(f"**{msg['role']}**: {msg['content']}")
+    # Question Input
+    question = st.text_input(
+        "Ask a Question about your PDF"
+    )
 
-# Question input
-question = st.text_input("Ask a Question about your pdf")
+    if question:
 
-if question:
-            st.session_state.messages.append(
-    {"role": "User", "content": question}
-)
-        # Similarity search
+        # Save user question
+        st.session_state.messages.append(
+            {
+                "role": "User",
+                "content": question
+            }
+        )
+
+        # Search relevant chunks
         relevant_docs = vectorstore.similarity_search(
             question,
-            k=2
+            k=3
         )
-                    
+
         # Combine context
         context = "\n\n".join(
             [doc.page_content for doc in relevant_docs]
@@ -89,7 +97,13 @@ if question:
 
         # Prompt
         prompt = f"""
-Answer the question using ONLY the provided context.
+You are a helpful assistant.
+
+Answer ONLY from the provided context.
+
+If answer is not available in context,
+say:
+"I could not find this information in the document."
 
 Context:
 {context}
@@ -100,15 +114,20 @@ Question:
 Answer:
 """
 
-        # LLM Response
-      try:
-        response = llm.invoke(prompt)
-    
-        st.session_state.messages.append(
-            {"role": "Assistant", "content": response.content}
-        )
-    
-        st.write(response.content)
-    
-    except Exception as e:
-        st.error(str(e))
+        try:
+
+            response = llm.invoke(prompt)
+
+            # Save assistant response
+            st.session_state.messages.append(
+                {
+                    "role": "Assistant",
+                    "content": response.content
+                }
+            )
+
+            # Show answer
+            st.write(response.content)
+
+        except Exception as e:
+            st.error(str(e))
