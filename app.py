@@ -72,8 +72,8 @@ for msg in st.session_state.messages:
 # Question input
 question = st.text_input("Ask a Question about your pdf")
 
-    if question:
-                st.session_state.messages.append(
+if question:
+            st.session_state.messages.append(
     {"role": "User", "content": question}
 )
         # Similarity search
