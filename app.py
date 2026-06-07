@@ -124,7 +124,14 @@ Answer:
         try:
 
             response = llm.invoke(prompt)
-
+            sources = []
+            
+            for doc in relevant_docs:
+                if "page" in doc.metadata:
+                    sources.append(
+                        f"Page {doc.metadata['page'] + 1}"
+                    )
+            
             # Save assistant response
             st.session_state.messages.append(
                 {
@@ -135,6 +142,11 @@ Answer:
 
             # Show answer
             st.write(response.content)
+            if len(sources) > 0:
+                st.write("### Sources")
+
+                for source in sources:
+                    st.write(source)
 
         except Exception as e:
             st.error(str(e))
