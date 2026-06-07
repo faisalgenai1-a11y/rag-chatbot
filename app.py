@@ -67,10 +67,17 @@ if uploaded_file is not None:
 
     # Show old messages
     for msg in st.session_state.messages:
-        st.write(f"**{msg['role']}**: {msg['content']}")
 
+        if msg["role"] == "User":
+            with st.chat_message("user"):
+                st.write(msg["content"])
+    
+        else:
+            with st.chat_message("assistant"):
+                st.write(msg["content"])
+    
     # Question Input
-    question = st.text_input(
+    question = st.chat_input(
         "Ask a Question about your PDF"
     )
 
