@@ -65,31 +65,28 @@ if uploaded_file is not None:
         embeddings
     )
 
-    # Show old messages
+    # ✅ Show ALL old messages first
     for msg in st.session_state.messages:
-
         if msg["role"] == "User":
             with st.chat_message("user"):
                 st.write(msg["content"])
-    
         else:
             with st.chat_message("assistant"):
                 st.write(msg["content"])
-    
+
     # Question Input
-    question = st.chat_input(
-        "Ask a Question about your PDF"
-    )
+    question = st.chat_input("Ask a Question about your PDF")
 
     if question:
 
-        # Save user question
-        st.session_state.messages.append(
-            {
-                "role": "User",
-                "content": question
-            }
-        )
+        # ✅ Save and show user question immediately
+        st.session_state.messages.append({
+            "role": "User",
+            "content": question
+        })
+
+        with st.chat_message("user"):
+            st.write(question)
 
         # Search relevant chunks
         relevant_docs = vectorstore.similarity_search(
@@ -122,31 +119,28 @@ Answer:
 """
 
         try:
-
             response = llm.invoke(prompt)
+
             sources = []
-            
             for doc in relevant_docs:
                 if "page" in doc.metadata:
                     sources.append(
                         f"Page {doc.metadata['page'] + 1}"
                     )
-            
+
             # Save assistant response
-            st.session_state.messages.append(
-                {
-                    "role": "Assistant",
-                    "content": response.content
-                }
-            )
+            st.session_state.messages.append({
+                "role": "Assistant",
+                "content": response.content
+            })
 
-            # Show answer
-            st.write(response.content)
-            if len(sources) > 0:
-                st.write("### Sources")
-
-                for source in sources:
-                    st.write(source)
+            # ✅ Show answer in proper chat bubble
+            with st.chat_message("assistant"):
+                st.write(response.content)
+                if sources:
+                    st.write("### Sources")
+                    for source in sources:
+                        st.write(source)
 
         except Exception as e:
             st.error(str(e))
