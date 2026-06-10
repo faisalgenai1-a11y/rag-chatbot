@@ -60,10 +60,12 @@ if uploaded_file is not None:
     )
 
     # Create Vector Store
+    st.write("Creating Vector DB....")
     vectorstore = FAISS.from_documents(
         docs,
         embeddings
     )
+    st.write("Vector DB Ready")
 
     # ✅ Show ALL old messages first
     for msg in st.session_state.messages:
