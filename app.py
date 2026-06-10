@@ -1,6 +1,6 @@
 import streamlit as st
 import tempfile
-
+import time
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -78,8 +78,10 @@ if uploaded_file is not None:
     question = st.chat_input("Ask a Question about your PDF")
 
     if question:
+        
+        start_time = time.time()
 
-        # ✅ Save and show user question immediately
+        #Save and show user question immediately
         st.session_state.messages.append({
             "role": "User",
             "content": question
@@ -137,6 +139,10 @@ Answer:
             # ✅ Show answer in proper chat bubble
             with st.chat_message("assistant"):
                 st.write(response.content)
+                end_time = time.time()
+
+                st.write(f"Response Time: {end_time -start_time: .2f} seconds")
+                         
                 if sources:
                     st.write("### Sources")
                     for source in sources:
