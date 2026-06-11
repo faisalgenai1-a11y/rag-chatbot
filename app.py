@@ -152,9 +152,8 @@ Answer:
 """
 
         try:
-            st.write("Calling Groq....")
-            response = llm.invoke(prompt)
-            st.write("Groq Returned answer")
+            with st.spinner("Analyzing document..."):
+                response = llm.invoke(prompt)
 
             sources = []
             for doc in relevant_docs:
