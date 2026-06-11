@@ -78,10 +78,10 @@ if uploaded_file is not None:
 
     # Question Input
     question = st.chat_input("Ask a Question about your PDF")
-    st.write("Question receive")
+    
     
     if question:
-        
+        st.write("Question receive")
         start_time = time.time()
 
         #Save and show user question immediately
@@ -141,7 +141,7 @@ Answer:
                 "content": response.content
             })
 
-            # ✅ Show answer in proper chat bubble
+            # Show answer in proper chat bubble
             with st.chat_message("assistant"):
                 st.write(response.content)
                 end_time = time.time()
