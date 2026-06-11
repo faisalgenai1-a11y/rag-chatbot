@@ -104,12 +104,29 @@ if uploaded_file is not None:
         with st.chat_message("user"):
             st.write(question)
 
-        # Search relevant chunks
-        relevant_docs = vectorstore.similarity_search(
+        # Search relevant chunks with score
+        results = vectorstore.similarity_search_with_score(
             question,
             k=3
         )
-
+        
+        relevant_docs = []
+        
+        for doc, score in results:
+            if score < 1.0:
+                relevant_docs.append(doc)
+        
+        # If nothing relevant found
+        if len(relevant_docs) == 0:
+            with st.chat_message("assistant"):
+                st.write("I could not find this information in the document.")
+        
+            st.session_state.messages.append({
+                "role": "Assistant",
+                "content": "I could not find this information in the document."
+            })
+        
+            st.stop()
         # Combine context
         context = "\n\n".join(
             [doc.page_content for doc in relevant_docs]
