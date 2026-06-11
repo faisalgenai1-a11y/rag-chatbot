@@ -15,7 +15,7 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "vectorstore" not in st.session_state:
     st.session_state.vectorstore = None
-if pdf_name not in st.session_state:
+if "pdf_name" not in st.session_state:
     st.session_state.pdf_name = None
 # Groq API Key
 groq_api_key = st.secrets["GROQ_API_KEY"]
