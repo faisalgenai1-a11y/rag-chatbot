@@ -15,7 +15,8 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "vectorstore" not in st.session_state:
     st.session_state.vectorstore = None
-
+if pdf_name not in st.session_state:
+    st.session_state.pdf_name = None
 # Groq API Key
 groq_api_key = st.secrets["GROQ_API_KEY"]
 
@@ -92,7 +93,7 @@ if uploaded_file is not None:
     
     
     if question:
-        st.write("Question receive")
+     
         start_time = time.time()
 
         #Save and show user question immediately
@@ -171,9 +172,6 @@ Answer:
             # Show answer in proper chat bubble
             with st.chat_message("assistant"):
                 st.write(response.content)
-                end_time = time.time()
-
-                st.write(f"Response Time: {end_time -start_time: .2f} seconds")
                          
                 if sources:
                     st.write("### Sources")
