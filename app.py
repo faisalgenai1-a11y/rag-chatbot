@@ -13,6 +13,8 @@ st.title("Simple RAG Chatbot")
 # Chat History
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "vectorstore" not in st.session_state:
+    st.session_state.vectorstore = None
 
 # Groq API Key
 groq_api_key = st.secrets["GROQ_API_KEY"]
@@ -31,41 +33,50 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    # Save PDF temporarily
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        pdf_path = tmp_file.name
+    # Create vector DB only first time
+    if st.session_state.vectorstore is None:
 
-    st.success("PDF uploaded successfully")
+        # Save PDF temporarily
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+            tmp_file.write(uploaded_file.read())
+            pdf_path = tmp_file.name
 
-    # Load PDF
-    loader = PyPDFLoader(pdf_path)
-    documents = loader.load()
+        st.success("PDF uploaded successfully")
 
-    st.write("Total Pages:", len(documents))
+        # Load PDF
+        loader = PyPDFLoader(pdf_path)
+        documents = loader.load()
 
-    # Split into chunks
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
+        st.write("Total Pages:", len(documents))
 
-    docs = text_splitter.split_documents(documents)
+        # Split into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200
+        )
 
-    st.write("Total Chunks:", len(docs))
+        docs = text_splitter.split_documents(documents)
+
+        st.write("Total Chunks:", len(docs))
 
     # Embeddings
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
     )
 
-    # Create Vector Store
-    st.write("Creating Vector DB....")
-    vectorstore = FAISS.from_documents(
-        docs,
-        embeddings
-    )
-    st.write("Vector DB Ready")
+    # Create Vector Store only once
+    if st.session_state.vectorstore is None:
+    
+        st.write("Creating Vector DB....")
+    
+        st.session_state.vectorstore = FAISS.from_documents(
+            docs,
+            embeddings
+        )
+    
+        st.write("Vector DB Ready")
+
+    vectorstore = st.session_state.vectorstore
 
     # Show ALL old messages first
     for msg in st.session_state.messages:
