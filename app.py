@@ -67,7 +67,7 @@ if uploaded_file is not None:
     )
     st.write("Vector DB Ready")
 
-    # ✅ Show ALL old messages first
+    # Show ALL old messages first
     for msg in st.session_state.messages:
         if msg["role"] == "User":
             with st.chat_message("user"):
@@ -78,7 +78,8 @@ if uploaded_file is not None:
 
     # Question Input
     question = st.chat_input("Ask a Question about your PDF")
-
+    st.write("Question receive")
+    
     if question:
         
         start_time = time.time()
@@ -123,7 +124,9 @@ Answer:
 """
 
         try:
+            st.write("Calling Groq....")
             response = llm.invoke(prompt)
+            st.write("Groq Returned answer")
 
             sources = []
             for doc in relevant_docs:
